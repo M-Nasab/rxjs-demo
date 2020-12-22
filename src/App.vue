@@ -15,7 +15,7 @@
 
 <script>
 import { fromEvent } from 'rxjs';
-import { debounceTime } from 'rxjs/operators';
+import { throttleTime } from 'rxjs/operators';
 
 export default {
   data() {
@@ -25,7 +25,7 @@ export default {
   },
   mounted() {
     const observer = fromEvent(document, 'mousemove').pipe(
-      debounceTime(1000),
+      throttleTime(1000),
     );
 
     observer.subscribe((event) => {
