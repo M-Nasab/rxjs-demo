@@ -28,6 +28,7 @@ export default {
   mounted() {
     const observer = interval(1000).pipe(
       filter((data) => data % 5 === 0),
+      map((data) => data / 2),
     );
 
     observer.subscribe((time) => {
