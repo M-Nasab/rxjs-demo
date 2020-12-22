@@ -5,45 +5,33 @@
     </h1>
 
     <div class="data-container">
-      <div v-if="weather" class="weather">
-        <div>
-          Feels Like: {{ weather.main.feels_like }}
-        </div>
-        <div>
-          Humidity: {{ weather.main.humidity }}
-        </div>
-        <div>
-          Pressure: {{ weather.main.pressure }}
-        </div>
-        <div>
-          Temperature: {{ weather.main.temp }}
-        </div>
-        <div>
-          Max: {{ weather.main.temp_max }}
-        </div>
-        <div>
-          Min: {{ weather.main.temp_min }}
-        </div>
-      </div>
+      <ul>
+        <li v-for="(data, index) in list" :key="index">
+          {{ data }}
+        </li>
+      </ul>
     </div>
 
   </div>
 </template>
 
 <script>
-import { from } from 'rxjs';
+import { interval } from 'rxjs';
+import { filter } from 'rxjs/operators';
 
 export default {
   data() {
     return {
-      weather: null,
+      list: [],
     };
   },
   mounted() {
-    const observer = from(this.getWeather('tehran'));
+    const observer = interval(1000).pipe(
+      filter((data) => data % 5 === 0),
+    );
 
-    observer.subscribe((weather) => {
-      this.weather = weather;
+    observer.subscribe((time) => {
+      this.list.push(time);
     });
   },
   methods: {
