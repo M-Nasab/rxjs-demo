@@ -5,8 +5,25 @@
     </h1>
 
     <div class="data-container">
-      <div class="time">
-        {{ time }}
+      <div v-if="weather" class="weather">
+        <div>
+          Feels Like: {{ weather.main.feels_like }}
+        </div>
+        <div>
+          Humidity: {{ weather.main.humidity }}
+        </div>
+        <div>
+          Pressure: {{ weather.main.pressure }}
+        </div>
+        <div>
+          Temperature: {{ weather.main.temp }}
+        </div>
+        <div>
+          Max: {{ weather.main.temp_max }}
+        </div>
+        <div>
+          Min: {{ weather.main.temp_min }}
+        </div>
       </div>
     </div>
 
@@ -14,20 +31,29 @@
 </template>
 
 <script>
-import { interval } from 'rxjs';
+import { from } from 'rxjs';
 
 export default {
   data() {
     return {
-      time: 0,
+      weather: null,
     };
   },
   mounted() {
-    const observer = interval(1000);
+    const observer = from(this.getWeather('tehran'));
 
-    observer.subscribe((data) => {
-      this.time = data;
+    observer.subscribe((weather) => {
+      this.weather = weather;
     });
+  },
+  methods: {
+    getWeather(cityName) {
+      const apiKey = '5255a59ae99e219a792a718f9684065f';
+
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${apiKey}`;
+
+      return fetch(url).then((result) => result.json());
+    },
   },
 };
 </script>
@@ -76,5 +102,21 @@ ul {
   font-weight: bold;
   text-align: center;
   color: cornflowerblue;
+}
+
+.weather {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  font-size: 50px;
+  font-weight: bold;
+
+  & > div {
+    padding: 20px;
+    border: 1px solid chocolate;
+  }
+
+  justify-items: center;
+  align-items: center;
 }
 </style>
