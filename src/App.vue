@@ -5,34 +5,31 @@
     </h1>
 
     <div class="data-container">
-      <ul>
-        <li v-for="(data, index) in list" :key="index">
-          {{ data }}
-        </li>
-      </ul>
+      <div v-if="position" class="position">
+        {{ `[${position.x}, ${position.y}]` }}
+      </div>
     </div>
 
   </div>
 </template>
 
 <script>
-import { interval } from 'rxjs';
-import { filter, map } from 'rxjs/operators';
+import { fromEvent } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
 
 export default {
   data() {
     return {
-      list: [],
+      position: null,
     };
   },
   mounted() {
-    const observer = interval(1000).pipe(
-      filter((data) => data % 5 === 0),
-      map((data) => data / 2),
+    const observer = fromEvent(document, 'mousemove').pipe(
+      debounceTime(1000),
     );
 
-    observer.subscribe((time) => {
-      this.list.push(time);
+    observer.subscribe((event) => {
+      this.position = event;
     });
   },
   methods: {
@@ -86,7 +83,7 @@ ul {
   margin: 0;
 }
 
-.time {
+.time, .position {
   font-size: 80px;
   font-weight: bold;
   text-align: center;
