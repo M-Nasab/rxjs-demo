@@ -17,7 +17,7 @@
 
 <script>
 import { interval } from 'rxjs';
-import { filter } from 'rxjs/operators';
+import { filter, map } from 'rxjs/operators';
 
 export default {
   data() {
