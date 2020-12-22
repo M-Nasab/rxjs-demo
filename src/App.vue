@@ -5,30 +5,28 @@
     </h1>
 
     <div class="data-container">
-      <ul>
-        <li v-for="(data, index) in list" :key="index">
-          {{ data }}
-        </li>
-      </ul>
+      <div class="time">
+        {{ time }}
+      </div>
     </div>
 
   </div>
 </template>
 
 <script>
-import { from } from 'rxjs';
+import { interval } from 'rxjs';
 
 export default {
   data() {
     return {
-      list: [],
+      time: 0,
     };
   },
   mounted() {
-    const observer = from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    const observer = interval(1000);
 
     observer.subscribe((data) => {
-      this.list.push(data);
+      this.time = data;
     });
   },
 };
@@ -71,5 +69,12 @@ h1 {
 ul {
   font-size: 40px;
   margin: 0;
+}
+
+.time {
+  font-size: 80px;
+  font-weight: bold;
+  text-align: center;
+  color: cornflowerblue;
 }
 </style>
