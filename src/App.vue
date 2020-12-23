@@ -35,6 +35,7 @@
 
 <script>
 import {
+  EMPTY,
   from,
   interval,
   Subject,
@@ -45,7 +46,6 @@ import {
   debounceTime,
   delay,
   map,
-  mergeMap,
   switchMap,
   tap,
 } from 'rxjs/operators';
@@ -57,6 +57,7 @@ export default {
       inputSubject: new Subject(),
       isLoading: false,
       loadingText: '',
+      observer: null,
     };
   },
   mounted() {
@@ -79,14 +80,23 @@ export default {
       this.loadingText = text;
     });
 
-    const observer = this.inputSubject.pipe(
+    this.observer = this.inputSubject.pipe(
       debounceTime(1000),
       tap(() => {
         this.isLoading = true;
       }),
-      switchMap((query) => from(this.getWeather(query))),
+      switchMap((query) => {
+        const apiStream = from(this.getWeather(query)).pipe(
+          switchMap((result) => (result.cod === 200 ? from([result]) : throwError('error'))),
+          catchError(() => {
+            this.isLoading = false;
+            return EMPTY;
+          }),
+        );
+
+        return apiStream;
+      }),
       delay(5000),
-      mergeMap((result) => (result.cod === 200 ? from([result]) : throwError('error'))),
       map((weather) => {
         if (!weather || !weather.main) return weather;
 
@@ -101,10 +111,9 @@ export default {
       tap(() => {
         this.isLoading = false;
       }),
-      catchError(() => observer),
     );
 
-    observer.subscribe((weather) => {
+    this.observer.subscribe((weather) => {
       this.weather = weather;
     });
   },
