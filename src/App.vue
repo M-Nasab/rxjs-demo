@@ -10,6 +10,10 @@
         <input type="text" @input="input">
       </label>
 
+      <div v-if="isLoading" class="spinner">
+        {{ loadingText }}
+      </div>
+
       <div v-if="weather" class="weather">
         <div>
           Name: {{ weather.name }}
@@ -32,15 +36,18 @@
 <script>
 import {
   from,
+  interval,
   Subject,
   throwError,
 } from 'rxjs';
 import {
   catchError,
   debounceTime,
+  delay,
   map,
   mergeMap,
   switchMap,
+  tap,
 } from 'rxjs/operators';
 
 export default {
@@ -48,12 +55,37 @@ export default {
     return {
       weather: null,
       inputSubject: new Subject(),
+      isLoading: false,
+      loadingText: '',
     };
   },
   mounted() {
+    const loadingTextStream = interval(500).pipe(
+      map((time) => {
+        const texts = [
+          'loading',
+          'loading .',
+          'loading ..',
+          'loading ...',
+        ];
+
+        const index = time % 4;
+
+        return texts[index];
+      }),
+    );
+
+    loadingTextStream.subscribe((text) => {
+      this.loadingText = text;
+    });
+
     const observer = this.inputSubject.pipe(
       debounceTime(1000),
+      tap(() => {
+        this.isLoading = true;
+      }),
       switchMap((query) => from(this.getWeather(query))),
+      delay(5000),
       mergeMap((result) => (result.cod === 200 ? from([result]) : throwError('error'))),
       map((weather) => {
         if (!weather || !weather.main) return weather;
@@ -65,6 +97,9 @@ export default {
             temp: Math.round(weather.main.temp - 273.15),
           },
         };
+      }),
+      tap(() => {
+        this.isLoading = false;
       }),
       catchError(() => observer),
     );
@@ -165,5 +200,13 @@ ul {
     font-size: 30px;
     padding: 10px;
   }
+}
+
+.spinner {
+  font-size: 40px;
+  font-weight: bold;
+  text-align: center;
+
+  margin-bottom: 20px;
 }
 </style>
