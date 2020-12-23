@@ -5,8 +5,24 @@
     </h1>
 
     <div class="data-container">
-      <div v-if="position" class="position">
-        {{ `[${position.x}, ${position.y}]` }}
+      <label class="text-input">
+        <span>City Name:</span>
+        <input type="text" @input="input">
+      </label>
+
+      <div v-if="weather" class="weather">
+        <div>
+          Name: {{ weather.name }}
+        </div>
+        <div>
+          Temperature: {{ weather.main.temp }}
+        </div>
+        <div>
+          Pressure: {{ weather.main.pressure }}
+        </div>
+        <div>
+          Humidity: {{ weather.main.humidity }}
+        </div>
       </div>
     </div>
 
@@ -14,22 +30,47 @@
 </template>
 
 <script>
-import { fromEvent } from 'rxjs';
-import { throttleTime } from 'rxjs/operators';
+import {
+  from,
+  Subject,
+  throwError,
+} from 'rxjs';
+import {
+  catchError,
+  debounceTime,
+  map,
+  mergeMap,
+  switchMap,
+} from 'rxjs/operators';
 
 export default {
   data() {
     return {
-      position: null,
+      weather: null,
+      inputSubject: new Subject(),
     };
   },
   mounted() {
-    const observer = fromEvent(document, 'mousemove').pipe(
-      throttleTime(1000),
+    const observer = this.inputSubject.pipe(
+      debounceTime(1000),
+      switchMap((query) => from(this.getWeather(query))),
+      mergeMap((result) => (result.cod === 200 ? from([result]) : throwError('error'))),
+      map((weather) => {
+        if (!weather || !weather.main) return weather;
+
+        return {
+          ...weather,
+          main: {
+            ...weather.main,
+            temp: Math.round(weather.main.temp - 273.15),
+          },
+        };
+      }),
+      catchError(() => observer),
     );
 
-    observer.subscribe((event) => {
-      this.position = event;
+    observer.subscribe((weather) => {
+      this.weather = weather;
     });
   },
   methods: {
@@ -39,6 +80,10 @@ export default {
       const url = `https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${apiKey}`;
 
       return fetch(url).then((result) => result.json());
+    },
+
+    input(event) {
+      this.inputSubject.next(event.target.value);
     },
   },
 };
@@ -104,5 +149,21 @@ ul {
 
   justify-items: center;
   align-items: center;
+}
+
+.text-input {
+  font-size: 40px;
+  margin-bottom: 30px;
+  display: block;
+
+  span {
+    font-weight: bold;
+    margin-inline-end: 20px;
+  }
+
+  input {
+    font-size: 30px;
+    padding: 10px;
+  }
 }
 </style>
