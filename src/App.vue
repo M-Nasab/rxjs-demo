@@ -5,28 +5,21 @@
     </h1>
 
     <div class="data-container">
-      <label class="text-input">
-        <span>City Name:</span>
-        <input type="text" @input="input">
-      </label>
+      <div class="inputs">
+        <label>
+          <span>Country:</span>
+          <select>
+            <option v-for="country in countries" :key="country.code" :label="country.name" />
+          </select>
+        </label>
 
-      <div v-if="isLoading" class="spinner">
-        {{ loadingText }}
-      </div>
+        <label>
+          <span>Cities:</span>
+          <select>
+            <option v-for="city in cities" :key="city.name" :label="city.name" />
+          </select>
+        </label>
 
-      <div v-if="weather" class="weather">
-        <div>
-          Name: {{ weather.name }}
-        </div>
-        <div>
-          Temperature: {{ weather.main.temp }}
-        </div>
-        <div>
-          Pressure: {{ weather.main.pressure }}
-        </div>
-        <div>
-          Humidity: {{ weather.main.humidity }}
-        </div>
       </div>
     </div>
 
@@ -34,100 +27,71 @@
 </template>
 
 <script>
-import {
-  EMPTY,
-  from,
-  interval,
-  Subject,
-  throwError,
-} from 'rxjs';
-import {
-  catchError,
-  debounceTime,
-  delay,
-  map,
-  switchMap,
-  tap,
-} from 'rxjs/operators';
-
 export default {
   data() {
     return {
-      weather: null,
-      inputSubject: new Subject(),
-      isLoading: false,
-      loadingText: '',
-      observer: null,
+      countries: [],
+      cities: [],
+
     };
   },
   mounted() {
-    const loadingTextStream = interval(500).pipe(
-      map((time) => {
-        const texts = [
-          'loading',
-          'loading .',
-          'loading ..',
-          'loading ...',
-        ];
-
-        const index = time % 4;
-
-        return texts[index];
-      }),
-    );
-
-    loadingTextStream.subscribe((text) => {
-      this.loadingText = text;
-    });
-
-    this.observer = this.inputSubject.pipe(
-      debounceTime(1000),
-      tap(() => {
-        this.isLoading = true;
-      }),
-      switchMap((query) => {
-        const apiStream = from(this.getWeather(query)).pipe(
-          switchMap((result) => (result.cod === 200 ? from([result]) : throwError('error'))),
-          catchError(() => {
-            this.isLoading = false;
-            return EMPTY;
-          }),
-        );
-
-        return apiStream;
-      }),
-      delay(5000),
-      map((weather) => {
-        if (!weather || !weather.main) return weather;
-
-        return {
-          ...weather,
-          main: {
-            ...weather.main,
-            temp: Math.round(weather.main.temp - 273.15),
-          },
-        };
-      }),
-      tap(() => {
-        this.isLoading = false;
-      }),
-    );
-
-    this.observer.subscribe((weather) => {
-      this.weather = weather;
-    });
   },
   methods: {
-    getWeather(cityName) {
-      const apiKey = '5255a59ae99e219a792a718f9684065f';
-
-      const url = `https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${apiKey}`;
-
-      return fetch(url).then((result) => result.json());
+    getCountries() {
+      return fetch('https://restcountries.eu/rest/v2/all').then((result) => result.json());
     },
 
-    input(event) {
-      this.inputSubject.next(event.target.value);
+    getCities(countryCode) {
+      const cities = {
+        IR: [
+          {
+            name: 'Tehran',
+          },
+          {
+            name: 'Mashhad',
+          },
+          {
+            name: 'Qom',
+          },
+          {
+            name: 'Shiraz',
+          },
+          {
+            name: 'Abadan',
+          },
+        ],
+
+        FR: [
+          {
+            name: 'Paris',
+          },
+          {
+            name: 'Marseille',
+          },
+          {
+            name: 'Strasbourge',
+          },
+        ],
+
+        DE: [
+          {
+            name: 'Berlin',
+          },
+          {
+            name: 'Munich',
+          },
+          {
+            name: 'Hamburge',
+          },
+        ],
+      };
+
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(cities[countryCode]);
+        }, 2000);
+      });
     },
   },
 };
@@ -167,55 +131,25 @@ h1 {
   padding: 20px;
 }
 
-ul {
-  font-size: 40px;
-  margin: 0;
-}
+.inputs {
+  display: flex;
 
-.time, .position {
-  font-size: 80px;
-  font-weight: bold;
-  text-align: center;
-  color: cornflowerblue;
-}
+  label {
+    font-size: 40px;
+    display: block;
 
-.weather {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 30px;
-  font-size: 50px;
-  font-weight: bold;
+    &:not(:last-child) {
+      margin-inline-end: 20px;
+    }
 
-  & > div {
-    padding: 20px;
-    border: 1px solid chocolate;
+    span {
+      margin-inline-end: 10px;
+    }
+
+    select {
+      font-size: 40px;
+      min-width: 100px;
+    }
   }
-
-  justify-items: center;
-  align-items: center;
-}
-
-.text-input {
-  font-size: 40px;
-  margin-bottom: 30px;
-  display: block;
-
-  span {
-    font-weight: bold;
-    margin-inline-end: 20px;
-  }
-
-  input {
-    font-size: 30px;
-    padding: 10px;
-  }
-}
-
-.spinner {
-  font-size: 40px;
-  font-weight: bold;
-  text-align: center;
-
-  margin-bottom: 20px;
 }
 </style>
